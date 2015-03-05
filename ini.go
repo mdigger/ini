@@ -35,13 +35,12 @@ func Parse(ini io.Reader) (Config, error) {
 			section = config[sectionName] // запоминаем текущую секцию
 			continue
 		}
-		keyValue := strings.SplitN(line, "=", 2)     // разделяем ключ = значение
-		if len(keyValue) != 2 || keyValue[0] == "" { // игнорируем пустые ключи
+		keyValue := strings.SplitN(line, "=", 2) // разделяем ключ = значение
+		key := strings.TrimSpace(keyValue[0])    // название ключа
+		if len(keyValue) != 2 || key == "" {     // игнорируем пустые ключи
 			continue
 		}
-		key := strings.TrimSpace(keyValue[0])   // название ключа
-		value := strings.TrimSpace(keyValue[1]) // значение ключа
-		section[key] = value                    // сохраняем ключ и значение в текущей секции
+		section[key] = strings.TrimSpace(keyValue[1]) // сохраняем ключ и значение в текущей секции
 	}
 	if err := scanner.Err(); err != nil { // в случае ошибки чтения возвращаем ее описание
 		return nil, err
