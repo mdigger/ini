@@ -19,7 +19,7 @@ func TestParse(t *testing.T) {
 			},
 		},
 		{
-			"[empty]\n[section]\nempty=\n",
+			"#comment\n[empty];comment\n[section]\nempty=\n",
 			Config{
 				"":        Section{},
 				"empty":   Section{},

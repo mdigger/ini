@@ -2,7 +2,6 @@ package ini
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"strings"
 )
@@ -15,26 +14,37 @@ type Config map[string]Section
 
 // Parse читает содержимое конфигурационного ini-файла и возвращает его в разобранном виде.
 func Parse(ini io.Reader) (Config, error) {
-	sectionName := "" // корневая секция
-	config := Config{
-		sectionName: Section{},
+	section := Section{} // текущая секуция
+	config := Config{    // пустое описание конфигурации
+		"": section, // определяем корневую секцию
 	}
-	scanner := bufio.NewScanner(ini)
+	scanner := bufio.NewScanner(ini) // инициализируем чтение из потока
 	for scanner.Scan() {
-		switch line := strings.TrimSpace(scanner.Text()); {
-		case strings.HasPrefix(line, ";"): // комментарий - пропускаем
-		case strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]"): // раздел
-			sectionName = strings.TrimSpace(line[1 : len(line)-1])
-			config[sectionName] = Section{}
-		default: // ключ = значение
-			parts := strings.SplitN(line, "=", 2)
-			if len(parts) == 2 && parts[0] != "" {
-				config[sectionName][strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
-			}
+		line := strings.TrimSpace(scanner.Text())          // читаем строку и избавляемся от пробелов в начале и конце строки
+		if idx := strings.IndexAny(line, "#;"); idx > -1 { // удаляем комментарии
+			line = strings.TrimSpace(line[:idx])
 		}
+		if line == "" { // пропускаем пустые строки
+			continue
+		}
+		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") { // разбираем раздел
+			sectionName := strings.TrimSpace(line[1 : len(line)-1]) // новое имя секции
+			if config[sectionName] == nil {                         // создаем секцию, если ее не было
+				config[sectionName] = Section{}
+			}
+			section = config[sectionName] // запоминаем текущую секцию
+			continue
+		}
+		keyValue := strings.SplitN(line, "=", 2)     // разделяем ключ = значение
+		if len(keyValue) != 2 || keyValue[0] == "" { // игнорируем пустые ключи
+			continue
+		}
+		key := strings.TrimSpace(keyValue[0])   // название ключа
+		value := strings.TrimSpace(keyValue[1]) // значение ключа
+		section[key] = value                    // сохраняем ключ и значение в текущей секции
 	}
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error scanning ini: %v", err)
+	if err := scanner.Err(); err != nil { // в случае ошибки чтения возвращаем ее описание
+		return nil, err
 	}
 	return config, nil
 }
