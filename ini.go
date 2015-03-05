@@ -15,11 +15,11 @@ type Config map[string]Section
 
 // Parse читает содержимое конфигурационного ini-файла и возвращает его в разобранном виде.
 func Parse(ini io.Reader) (Config, error) {
+	sectionName := "" // корневая секция
 	config := Config{
-		"": Section{}, // корневая секция
+		sectionName: Section{},
 	}
 	scanner := bufio.NewScanner(ini)
-	sectionName := ""
 	for scanner.Scan() {
 		switch line := strings.TrimSpace(scanner.Text()); {
 		case strings.HasPrefix(line, ";"): // комментарий - пропускаем
